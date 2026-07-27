@@ -890,6 +890,7 @@ function abrirAjustes(){
       <div class="stat"><span>Movimentações</span><b>${S.movimentos.length}</b></div>
       <div class="stat"><span>Onde fica salvo<small>${onde}</small></span><b></b></div></div>
     <button class="btn" onclick="abrirVitrine()">Publicar vitrine do site</button>
+    <button class="btn ghost" onclick="abrirPublicacao()">Chave de publicação</button>
     <button class="btn ghost" onclick="exportar()">Baixar backup (com fotos)</button>
     <button class="btn ghost" onclick="pedirRestauro()">Restaurar backup</button>
     <p class="hint" style="text-align:center;margin:10px 0 16px">Use o backup para levar o estoque
@@ -898,6 +899,61 @@ function abrirAjustes(){
     ${guirlanda()}`);
 }
 const ZAP='5541997180152';
+const REPO='rosamodas/rosamodas.github.io', ARQ='catalogo.json', PUBKEY='loja:publicacao';
+let PUB={token:''};
+async function carregarPub(){ try{const v=await store.get(PUBKEY); if(v)PUB=JSON.parse(v)||{token:''}}catch(e){} }
+async function salvarPub(){ try{await store.set(PUBKEY,JSON.stringify(PUB))}catch(e){} }
+function b64(txt){
+  const by=new TextEncoder().encode(txt); let bin='';
+  for(let i=0;i<by.length;i+=0x8000) bin+=String.fromCharCode.apply(null,by.subarray(i,i+0x8000));
+  return btoa(bin);
+}
+function erroGit(st){
+  if(st===401||st===403)return 'A chave de publicação não vale mais. Peça uma nova ao Rafael.';
+  if(st===404)return 'A chave não tem acesso ao site. Peça ao Rafael para refazer.';
+  if(st===409||st===422)return 'O site mudou enquanto eu publicava. Tente de novo.';
+  return 'Não consegui publicar agora (erro '+st+'). Tente daqui a pouco.';
+}
+async function publicarNoGitHub(txt){
+  const url='https://api.github.com/repos/'+REPO+'/contents/'+ARQ;
+  const h={Authorization:'Bearer '+PUB.token,Accept:'application/vnd.github+json'};
+  let sha=null;
+  try{ const r=await fetch(url+'?ref=main',{headers:h}); if(r.ok) sha=(await r.json()).sha; }catch(e){}
+  const r=await fetch(url,{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},h),
+    body:JSON.stringify({message:'Vitrine atualizada pelo app',branch:'main',content:b64(txt),sha:sha||undefined})});
+  if(!r.ok) throw new Error(erroGit(r.status));
+}
+function abrirPublicacao(){
+  const tem=!!PUB.token;
+  abrirSheet(cab('Publicação online', tem?'A vitrine vai pro ar direto daqui.'
+      :'Cole a chave que o Rafael gerou para publicar sem depender dele.')+`
+    <div class="field"><span class="tag-label">Chave de publicação</span>
+      <input class="inp" id="pub-token" type="password" autocomplete="off" spellcheck="false"
+        placeholder="${tem?'••••••••••••  (já configurada)':'cole a chave aqui'}">
+      <p class="hint">Fica guardada só neste celular. Não vai junto no backup nem aparece pra ninguém.</p></div>
+    <button class="btn" onclick="salvarToken()">Salvar chave</button>
+    <button class="btn ghost" onclick="testarToken()">Testar conexão</button>
+    ${tem?'<button class="btn danger" onclick="limparToken()">Remover a chave deste celular</button>':''}`);
+}
+async function salvarToken(){
+  const v=(($('pub-token')||{}).value||'').trim();
+  if(!v)return toast('Cole a chave no campo.');
+  PUB.token=v; await salvarPub(); fecharSheet();
+  toast('Chave salva. Agora dá para publicar direto.');
+}
+async function limparToken(){
+  PUB.token=''; await salvarPub(); fecharSheet(); toast('Chave removida deste celular.');
+}
+async function testarToken(){
+  const v=(($('pub-token')||{}).value||'').trim()||PUB.token;
+  if(!v)return toast('Cole a chave antes de testar.');
+  toast('Testando…');
+  try{
+    const r=await fetch('https://api.github.com/repos/'+REPO+'/contents/'+ARQ+'?ref=main',
+      {headers:{Authorization:'Bearer '+v,Accept:'application/vnd.github+json'}});
+    toast(r.ok?'Conexão certa. Pode publicar.':erroGit(r.status));
+  }catch(e){ toast('Sem internet agora.'); }
+}
 const naVitrine=p=>p.vitrine!==false;
 
 function abrirVitrine(){
@@ -907,8 +963,10 @@ function abrirVitrine(){
     <div class="box"><div class="stat" style="padding-top:0">
       <span>Peças na vitrine<small>de ${l.length} cadastradas</small></span><b class="rosa" id="v-conta">${n}</b></div></div>
     <div id="v-lista">${l.map(p=>itemVitrine(p)).join('')}</div>
-    <button class="btn" onclick="gerarCatalogo()">Gerar arquivo do site</button>
-    <p class="hint" style="text-align:center">Depois é só enviar esse arquivo pro Rafael subir no site.</p>`);
+    <button class="btn" onclick="gerarCatalogo()">${PUB.token?'Publicar no site agora':'Gerar arquivo do site'}</button>
+    <p class="hint" style="text-align:center">${PUB.token
+      ? 'O site atualiza sozinho, cerca de 1 minuto depois.'
+      : 'Sem a chave de publicação, o app baixa o arquivo para enviar ao Rafael.'}</p>`);
 }
 function itemVitrine(p){
   const on=naVitrine(p);
@@ -942,14 +1000,27 @@ async function gerarCatalogo(){
     itens.push({id:p.id,nome:p.nome,cor:p.cor,tam:p.tam,cat:p.cat||'',
       preco:p.preco,qtd:p.qtd,capa,fotos});
   }
-  const doc={loja:LOJA,zap:ZAP,gerado:Date.now(),itens};
-  const txt=JSON.stringify(doc);
+  const txt=JSON.stringify({loja:LOJA,zap:ZAP,gerado:Date.now(),itens});
   const kb=Math.round(txt.length/1024);
-  const b=new Blob([txt],{type:'application/json'});
+  const tam=kb>1024?(kb/1024).toFixed(1)+' MB':kb+' KB';
+
+  if(PUB.token){
+    toast('Publicando '+tam+'…');
+    try{
+      await publicarNoGitHub(txt);
+      fecharSheet();
+      toast(itens.length+' peças no ar. O site atualiza em cerca de 1 minuto.');
+      return;
+    }catch(e){
+      toast(e.message);
+      return;
+    }
+  }
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(b); a.download='catalogo.json'; a.click();
+  a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));
+  a.download='catalogo.json'; a.click();
   fecharSheet();
-  toast(itens.length+' peças · '+(kb>1024?(kb/1024).toFixed(1)+' MB':kb+' KB'));
+  toast(itens.length+' peças · '+tam+' · envie o arquivo ao Rafael');
 }
 async function exportar(){
   toast('Preparando o backup, aguarde…');
@@ -1022,7 +1093,7 @@ function toast(msg,undo){
 }
 
 (async()=>{
-  await carregar();render();
+  await carregar();await carregarPub();render();
   if(MODO==='memoria')toast('Este navegador não deixa salvar. Os dados somem ao fechar.');
 })();
 </script>
