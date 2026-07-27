@@ -815,12 +815,13 @@ async function carregarStrip(id){
   el.innerHTML=fs.map((f,i)=>`<img src="${f}" onclick="verFotos(${i})" alt="">`).join('');
 }
 const LOJA={nome:'Rosa Modas',tag:'Ousadia & Beleza',
-  publico:'Masculino · Feminino · Infantil & Variedades',insta:'instagram.com/rosamodas59'};
+  publico:'Masculino · Feminino · Infantil & Variedades',insta:'instagram.com/rosamodas59',
+  endereco:'Rua Enette Dubard, 480 - Tatuquara, Curitiba'};
 
 function mensagem(p){
   const det=[p.cor,p.tam?'Tam '+p.tam:''].filter(Boolean).join(' · ');
   return ['🌸 *'+p.nome+'*',det,'','*'+brl(p.preco)+'*','',
-    '_'+LOJA.nome+' · '+LOJA.tag+'_','📷 '+LOJA.insta].join('\n');
+    '_'+LOJA.nome+' · '+LOJA.tag+'_','📷 '+LOJA.insta,'📍 '+LOJA.endereco].join('\n');
 }
 async function fotosComoArquivos(id){
   try{

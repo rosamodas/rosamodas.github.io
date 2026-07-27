@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <title>Rosa Modas · Ousadia &amp; Beleza</title>
-<meta name="description" content="Rosa Modas · Ousadia & Beleza. Masculino, feminino, infantil e variedades. Veja as peças e peça pelo WhatsApp.">
+<meta name="description" content="Rosa Modas · Ousadia &amp; Beleza. Masculino, feminino, infantil e variedades. Rua Enette Dubard, 480 - Tatuquara, Curitiba. Veja as peças e peça pelo WhatsApp.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap');
 :root{
@@ -100,6 +100,13 @@ a{color:inherit}
 .pe svg{display:block;margin:0 auto 10px;max-width:100%;height:auto}
 .pe b{display:block;font-size:16px;font-weight:700;letter-spacing:.1em}
 .pe p{margin:4px 0 14px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.local{max-width:340px;margin:0 auto 18px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:16px}
+.local .end{margin:8px 0 0;font-size:14px;line-height:1.5;font-weight:500}
+.local .hora{margin:10px 0 0;font-size:13px;color:var(--muted);line-height:1.5}
+.local .mapa{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;
+  background:var(--rosa);color:#fff;border-radius:11px;padding:13px;font-size:15px;
+  font-weight:600;text-decoration:none}
 .pe-links{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
 .pe-links a{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);
   border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;text-decoration:none}
@@ -164,6 +171,15 @@ function guirlanda(){
   fl.forEach(a=>{s+=flor(a[0],a[1],a[2],a[3],a[4])});
   return `<svg viewBox="0 0 320 46" width="320" height="46" aria-hidden="true">${s}</svg>`;
 }
+
+const ENDERECO={
+  linha1:'Rua Enette Dubard, 480',
+  linha2:'Tatuquara · Curitiba - PR',
+  cep:'81470-075',
+  horario:''   /* ex.: 'Seg a sex 9h às 18h · Sáb 9h às 13h' */
+};
+const linkMapa=()=>'https://www.google.com/maps/search/?api=1&query='+
+  encodeURIComponent(ENDERECO.linha1+', Tatuquara, Curitiba - PR, '+ENDERECO.cep);
 
 let CAT=null, itens=[], fCat='', fTam='', busca='', atual=null;
 
@@ -278,6 +294,15 @@ function montarRodape(){
   $('rodape').innerHTML=`${guirlanda()}
     <b><span style="color:var(--ink)">ROSA</span> <span style="color:var(--rosa)">MODAS</span></b>
     <p>Ousadia &amp; Beleza · Masculino · Feminino · Infantil &amp; Variedades</p>
+    <div class="local">
+      <span class="lbl">Onde estamos</span>
+      <p class="end">${ENDERECO.linha1}<br>${ENDERECO.linha2}</p>
+      ${ENDERECO.horario?`<p class="hora">${ENDERECO.horario}</p>`:''}
+      <a class="mapa" href="${linkMapa()}" target="_blank" rel="noopener">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        Como chegar</a>
+    </div>
     <div class="pe-links">
       <a href="https://wa.me/${zap}" target="_blank" rel="noopener">WhatsApp (41) 99718-0152</a>
       <a href="https://instagram.com/rosamodas59" target="_blank" rel="noopener">@rosamodas59</a>
