@@ -1,0 +1,289 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<title>Rosa Modas · Ousadia &amp; Beleza</title>
+<meta name="description" content="Rosa Modas · Ousadia & Beleza. Masculino, feminino, infantil e variedades. Veja as peças e peça pelo WhatsApp.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap');
+:root{
+  --rosa:#E5197F; --rosa-esc:#C41169; --rosa-suave:#FDE8F1;
+  --paper:#FFF7FA; --card:#FFFFFF; --ink:#2E1622; --muted:#96707F; --line:#F5DDE8;
+  --folha:#4F8A54;
+  --ui:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:var(--ui);background:var(--paper);color:var(--ink);font-size:15px;line-height:1.45}
+button{font-family:inherit;font-size:inherit;color:inherit;border:0;background:none;cursor:pointer}
+a{color:inherit}
+.lbl{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+/* topo */
+.bar{position:sticky;top:0;z-index:40;display:flex;align-items:baseline;gap:6px;
+  background:var(--card);border-bottom:2px solid var(--rosa);
+  padding:calc(10px + env(safe-area-inset-top)) 16px 9px}
+.bar i,.bar b{font-size:14px;font-weight:700;letter-spacing:.17em;font-style:normal}
+.bar i{color:var(--ink)}
+.bar b{color:var(--rosa)}
+.bar a{margin-left:auto;font-size:12px;color:var(--muted);text-decoration:none;font-weight:500}
+
+/* hero */
+.hero{text-align:center;padding:26px 20px 20px}
+.hero svg{display:block;margin:0 auto 6px;max-width:100%;height:auto}
+.hero h1{margin:0;font-size:38px;font-weight:700;letter-spacing:.06em;line-height:1.0}
+.hero h1 span{display:block}
+.hero h1 .rs{color:var(--ink)}
+.hero h1 .md{color:var(--rosa)}
+.hero .lema{margin:10px 0 0;font-size:19px;font-weight:600;color:var(--rosa);letter-spacing:.01em}
+.hero p{margin:6px 0 0;font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+
+/* filtros */
+.filtros{position:sticky;top:37px;z-index:30;background:var(--paper);
+  padding:10px 0 8px;border-bottom:1px solid var(--line)}
+.chips{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:0 16px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;
+  padding:8px 14px;font-size:13px;font-weight:500;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.busca{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:0 12px;margin:8px 16px 0}
+.busca input{border:0;outline:0;background:none;width:100%;padding:11px 0;font-size:16px;font-family:inherit}
+.busca svg{flex:none;color:var(--rosa);opacity:.6}
+
+/* grade */
+.grade{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px}
+.peca{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;
+  overflow:hidden;transition:transform .12s ease}
+.peca:active{transform:scale(.977)}
+.peca-img{position:relative;width:100%;aspect-ratio:3/4;background:var(--rosa-suave)}
+.peca-img img{width:100%;height:100%;object-fit:cover;display:block}
+.peca-img .sem{display:flex;align-items:center;justify-content:center;height:100%}
+.esgotado{position:absolute;left:8px;top:8px;background:rgba(46,22,34,.82);color:#fff;
+  font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border-radius:999px}
+.peca-txt{padding:11px 12px 13px}
+.peca-txt b{display:block;font-size:14px;font-weight:600;line-height:1.25;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.peca-meta{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;margin:3px 0 7px}
+.preco{font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--rosa-esc)}
+
+.sw{width:13px;height:13px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.14);display:inline-block}
+.sw.lg{width:40px;height:40px}
+.estampa{background:repeating-linear-gradient(45deg,#E8748A 0 4px,#F5E2C0 4px 8px,#8FB8DD 8px 12px)}
+
+/* detalhe */
+.scrim{position:fixed;inset:0;background:rgba(46,22,34,.5);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.det{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--paper);
+  border-radius:20px 20px 0 0;max-height:94vh;overflow-y:auto;overscroll-behavior:contain;
+  transform:translateY(101%);transition:transform .26s cubic-bezier(.32,.72,0,1);
+  padding:0 16px calc(22px + env(safe-area-inset-bottom))}
+.det.on{transform:translateY(0)}
+.grab{width:38px;height:4px;border-radius:999px;background:var(--line);margin:9px auto 12px}
+.carrossel{display:flex;gap:9px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin-bottom:14px}
+.carrossel::-webkit-scrollbar{display:none}
+.carrossel img{width:78%;flex:none;aspect-ratio:3/4;object-fit:cover;border-radius:14px;
+  scroll-snap-align:center;background:var(--rosa-suave)}
+.carrossel.solo img{width:100%}
+.det h2{margin:0;font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.det-meta{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:13px;margin:6px 0 14px}
+.det-preco{font-size:30px;font-weight:700;letter-spacing:-.025em;color:var(--rosa-esc);margin-bottom:4px}
+.det-est{font-size:12px;color:var(--folha);font-weight:600;margin-bottom:18px}
+.det-est.zero{color:var(--muted)}
+.btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  background:var(--folha);color:#fff;border-radius:13px;padding:16px;font-size:16px;font-weight:600;
+  text-decoration:none}
+.btn:active{opacity:.88}
+.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);margin-top:9px}
+
+/* rodape */
+.pe{text-align:center;padding:34px 24px calc(34px + env(safe-area-inset-bottom));border-top:1px solid var(--line);margin-top:10px}
+.pe svg{display:block;margin:0 auto 10px;max-width:100%;height:auto}
+.pe b{display:block;font-size:16px;font-weight:700;letter-spacing:.1em}
+.pe p{margin:4px 0 14px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.pe-links{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+.pe-links a{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);
+  border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;text-decoration:none}
+
+.aviso{text-align:center;padding:56px 26px}
+.aviso b{display:block;font-size:17px;font-weight:600;margin-bottom:6px}
+.aviso p{margin:0;font-size:14px;color:var(--muted);line-height:1.55}
+.carregando{text-align:center;padding:64px 20px;color:var(--muted);font-size:14px}
+
+:focus-visible{outline:2px solid var(--rosa);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (min-width:560px){
+  .grade{grid-template-columns:repeat(3,1fr);max-width:1000px;margin:0 auto}
+  .hero h1{font-size:46px}
+  .det{max-width:560px;left:50%;transform:translate(-50%,101%);border-radius:20px 20px 0 0}
+  .det.on{transform:translate(-50%,0)}
+  .carrossel img{width:56%}
+}
+</style>
+
+<div class="bar"><i>ROSA</i><b>MODAS</b><a href="https://instagram.com/rosamodas59" target="_blank" rel="noopener">@rosamodas59</a></div>
+
+<div class="hero" id="hero"></div>
+<div class="filtros" id="filtros" hidden></div>
+<div id="conteudo" class="carregando">Carregando as peças…</div>
+<div class="pe" id="rodape" hidden></div>
+
+<div class="scrim" id="scrim" onclick="fechar()"></div>
+<div class="det" id="det"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const brl=n=>(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+const CORES={'Preto':'#1a1a1a','Branco':'#f7f5f0','Off white':'#ece4d6','Cinza':'#9a9ea6','Bege':'#d8c3a3',
+'Nude':'#e2bfa9','Marrom':'#7a5236','Caramelo':'#b5773c','Vermelho':'#c0392b','Vinho':'#6d2036','Rosa':'#e9a3ba',
+'Pink':'#df3f96','Coral':'#e8705a','Laranja':'#e57a35','Amarelo':'#f0c53c','Mostarda':'#c9962a','Verde':'#4a8c5c',
+'Verde militar':'#5c6440','Menta':'#a5d6c0','Azul':'#2f6fb0','Azul claro':'#8fb8dd','Marinho':'#22335c',
+'Jeans':'#4f7396','Lilás':'#b096d8','Roxo':'#6b3fa0','Dourado':'#c9a227','Prata':'#b9bdc3','Estampado':'estampa'};
+const hex=n=>CORES[n]||'#c9c9c9';
+const sw=(c,k='')=>hex(c)==='estampa'?`<span class="sw estampa ${k}"></span>`:`<span class="sw ${k}" style="background:${hex(c)}"></span>`;
+
+/* ornamento floral */
+function flor(x,y,r,c,mio){
+  let s='';
+  for(let i=0;i<5;i++){
+    const a=i*72*Math.PI/180-Math.PI/2;
+    const px=(x+Math.cos(a)*r*.55).toFixed(1),py=(y+Math.sin(a)*r*.55).toFixed(1);
+    s+=`<ellipse cx="${px}" cy="${py}" rx="${(r*.42).toFixed(1)}" ry="${(r*.58).toFixed(1)}" fill="${c}"
+      transform="rotate(${(a*180/Math.PI+90).toFixed(0)} ${px} ${py})"/>`;
+  }
+  return s+`<circle cx="${x}" cy="${y}" r="${(r*.3).toFixed(1)}" fill="${mio||'#F5C518'}"/>`;
+}
+function guirlanda(){
+  const fl=[[26,26,10,'#E8748A'],[56,17,7,'#F5C518','#E08A00'],[86,27,9,'#F9A8CE'],[114,18,6,'#B08CD8'],
+    [152,24,12,'#E8748A'],[190,17,7,'#F5C518','#E08A00'],[220,27,9,'#F9A8CE'],[250,18,6,'#E8748A'],
+    [280,26,8,'#F5C518','#E08A00']];
+  const fo=[[42,31,'#5B8F4E'],[102,13,'#4F8A54'],[170,32,'#5B8F4E'],[234,12,'#4F8A54'],[296,29,'#5B8F4E']];
+  let s='';
+  fo.forEach(([x,y,c],i)=>{s+=`<ellipse cx="${x}" cy="${y}" rx="13" ry="6" fill="${c}" opacity=".8" transform="rotate(${i%2?20:-20} ${x} ${y})"/>`});
+  fl.forEach(a=>{s+=flor(a[0],a[1],a[2],a[3],a[4])});
+  return `<svg viewBox="0 0 320 46" width="320" height="46" aria-hidden="true">${s}</svg>`;
+}
+
+let CAT=null, itens=[], fCat='', fTam='', busca='', atual=null;
+
+async function iniciar(){
+  $('hero').innerHTML=`${guirlanda()}<h1><span class="rs">ROSA</span><span class="md">MODAS</span></h1>
+    <p class="lema">Ousadia &amp; Beleza</p>
+    <p>Masculino · Feminino · Infantil &amp; Variedades</p>`;
+  try{
+    const r=await fetch('catalogo.json?v='+Date.now());
+    if(!r.ok) throw new Error('http '+r.status);
+    CAT=await r.json();
+    itens=(CAT.itens||[]);
+  }catch(e){
+    $('conteudo').className='aviso';
+    $('conteudo').innerHTML=`<b>A vitrine ainda não foi publicada</b>
+      <p>As peças aparecem aqui assim que o catálogo for enviado. Enquanto isso, chame no WhatsApp que a gente mostra tudo por lá.</p>`;
+    montarRodape(); return;
+  }
+  if(!itens.length){
+    $('conteudo').className='aviso';
+    $('conteudo').innerHTML=`<b>Nenhuma peça na vitrine agora</b><p>Estamos preparando as novidades. Volte em breve 🌸</p>`;
+    montarRodape(); return;
+  }
+  montarFiltros(); pintar(); montarRodape();
+}
+
+function montarFiltros(){
+  const cats=[...new Set(itens.map(i=>i.cat).filter(Boolean))].sort();
+  const tams=[...new Set(itens.map(i=>i.tam).filter(Boolean))]
+    .sort((a,b)=>{const o=['PP','P','M','G','GG','XG','Único'];const x=o.indexOf(a),y=o.indexOf(b);
+      return (x<0?99:x)-(y<0?99:y)||a.localeCompare(b,'pt')});
+  let h=`<div class="chips">
+    <button class="chip" aria-pressed="${!fCat}" onclick="setCat('')">Tudo</button>
+    ${cats.map(c=>`<button class="chip" aria-pressed="${fCat===c}" onclick="setCat('${esc(c)}')">${esc(c)}</button>`).join('')}
+  </div>`;
+  if(tams.length>1) h+=`<div class="chips" style="margin-top:7px">
+    <button class="chip" aria-pressed="${!fTam}" onclick="setTam('')">Todos os tamanhos</button>
+    ${tams.map(t=>`<button class="chip" aria-pressed="${fTam===t}" onclick="setTam('${esc(t)}')">${esc(t)}</button>`).join('')}
+  </div>`;
+  h+=`<div class="busca"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input placeholder="Buscar peça ou cor" value="${esc(busca)}" oninput="busca=this.value;pintar()"></div>`;
+  $('filtros').innerHTML=h; $('filtros').hidden=false;
+}
+function setCat(c){fCat=fCat===c?'':c;montarFiltros();pintar()}
+function setTam(t){fTam=fTam===t?'':t;montarFiltros();pintar()}
+
+function filtrados(){
+  const q=busca.trim().toLowerCase();
+  return itens.filter(i=>
+    (!fCat||i.cat===fCat) && (!fTam||i.tam===fTam) &&
+    (!q||(i.nome+' '+i.cor+' '+i.tam+' '+(i.cat||'')).toLowerCase().includes(q))
+  ).sort((a,b)=>(b.qtd>0)-(a.qtd>0));
+}
+function pintar(){
+  const l=filtrados(), c=$('conteudo');
+  if(!l.length){
+    c.className='aviso';
+    c.innerHTML=`<b>Nada com esse filtro</b><p>Tente outra categoria, tamanho ou nome.</p>`;
+    return;
+  }
+  c.className='grade';
+  c.innerHTML=l.map((i,n)=>`
+    <button class="peca" onclick="abrir(${itens.indexOf(i)})">
+      <div class="peca-img">
+        ${i.capa?`<img src="${i.capa}" alt="${esc(i.nome)}" loading="${n<4?'eager':'lazy'}">`
+                :`<div class="sem">${sw(i.cor,'lg')}</div>`}
+        ${i.qtd<1?'<span class="esgotado">Esgotado</span>':''}
+      </div>
+      <div class="peca-txt">
+        <b>${esc(i.nome)}</b>
+        <div class="peca-meta">${sw(i.cor)}<span>${esc(i.cor)} · ${esc(i.tam)}</span></div>
+        <div class="preco">${brl(i.preco)}</div>
+      </div>
+    </button>`).join('');
+}
+
+function abrir(n){
+  const i=itens[n]; if(!i)return;
+  atual=i;
+  const fotos=(i.fotos&&i.fotos.length)?i.fotos:(i.capa?[i.capa]:[]);
+  const temEstoque=i.qtd>0;
+  $('det').innerHTML=`<div class="grab"></div>
+    ${fotos.length?`<div class="carrossel ${fotos.length<2?'solo':''}">
+      ${fotos.map(f=>`<img src="${f}" alt="${esc(i.nome)}">`).join('')}</div>`:''}
+    <h2>${esc(i.nome)}</h2>
+    <div class="det-meta">${sw(i.cor)}<span>${esc(i.cor)} · Tamanho ${esc(i.tam)}${i.cat?' · '+esc(i.cat):''}</span></div>
+    <div class="det-preco">${brl(i.preco)}</div>
+    <div class="det-est ${temEstoque?'':'zero'}">${temEstoque?'Disponível na loja':'Esgotado no momento'}</div>
+    <a class="btn" href="${linkZap(i)}" target="_blank" rel="noopener">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2Zm5.6 14.2c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.6-.1-.4-.1-.9-.3-1.5-.6-2.6-1.1-4.3-3.8-4.4-4-.1-.2-1-1.4-1-2.6s.6-1.8.9-2.1c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2 0 .4 0 .5l-.4.5c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.8.9.8 1.7 1 2 1.2.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.6-.1l1.8.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3Z"/></svg>
+      ${temEstoque?'Pedir no WhatsApp':'Perguntar se volta'}
+    </a>
+    <button class="btn ghost" onclick="fechar()">Voltar</button>`;
+  $('det').classList.add('on'); $('scrim').classList.add('on');
+  $('det').scrollTop=0;
+  document.body.style.overflow='hidden';
+}
+function fechar(){
+  $('det').classList.remove('on'); $('scrim').classList.remove('on');
+  document.body.style.overflow='';
+}
+function linkZap(i){
+  const zap=(CAT&&CAT.zap)||'5541997180152';
+  const txt=i.qtd>0
+    ? `Oi! Vi no site e me interessei 🌸\n\n*${i.nome}*\n${i.cor} · Tam ${i.tam}\n${brl(i.preco)}\n\nAinda tem disponível?`
+    : `Oi! Vi no site a peça *${i.nome}* (${i.cor} · Tam ${i.tam}) e ela está esgotada.\n\nVocês vão receber de novo?`;
+  return 'https://wa.me/'+zap+'?text='+encodeURIComponent(txt);
+}
+function montarRodape(){
+  const zap=(CAT&&CAT.zap)||'5541997180152';
+  $('rodape').innerHTML=`${guirlanda()}
+    <b><span style="color:var(--ink)">ROSA</span> <span style="color:var(--rosa)">MODAS</span></b>
+    <p>Ousadia &amp; Beleza · Masculino · Feminino · Infantil &amp; Variedades</p>
+    <div class="pe-links">
+      <a href="https://wa.me/${zap}" target="_blank" rel="noopener">WhatsApp (41) 99718-0152</a>
+      <a href="https://instagram.com/rosamodas59" target="_blank" rel="noopener">@rosamodas59</a>
+    </div>`;
+  $('rodape').hidden=false;
+}
+addEventListener('keydown',e=>{if(e.key==='Escape')fechar()});
+iniciar();
+</script>
