@@ -119,6 +119,11 @@ input{font-family:inherit;font-size:16px;color:inherit}
 .chips{display:flex;flex-wrap:wrap;gap:7px}
 .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 13px;font-size:13px;font-weight:500}
 .chip[aria-pressed="true"]{background:var(--rosa);border-color:var(--rosa);color:#fff}
+.dias{margin-top:14px;border-top:1px solid var(--line)}
+.dia{display:flex;align-items:baseline;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.dia:last-child{border:0}
+.dia span{color:var(--muted);text-transform:capitalize}
+.dia b{font-variant-numeric:tabular-nums;font-weight:600}
 .chip.mais{border-style:dashed;border-color:var(--rosa);color:var(--rosa);font-weight:600}
 .alerta{display:block;width:calc(100% - 32px);margin:12px 16px 0;background:#FBEEDC;color:#8A5511;
   border:1px solid #F0D9B0;border-radius:11px;padding:11px 14px;font-size:13px;font-weight:600;text-align:left}
@@ -544,6 +549,10 @@ function telaRelatorios(){
   h+=`<button class="btn ghost" onclick="abrirAjustes()">Ajustes e backup</button></div>`;
   return h;
 }
+function curto(v){
+  if(v>=1000) return (v/1000).toFixed(1).replace('.',',')+'k';
+  return String(Math.round(v));
+}
 function graficoDias(vendas,dias){
   const n = dias<0 ? 30 : (dias<=1 ? 7 : Math.min(dias,60));
   const hoje=new Date(); hoje.setHours(0,0,0,0);
@@ -554,36 +563,48 @@ function graficoDias(vendas,dias){
   }
   const max=Math.max(...dd.map(d=>d.v));
   if(!max) return '';
-  const W=320,H=132,PB=20,PT=8;
+  const W=320,H=140,PB=20,PT=16;
   const passo=W/n, larg=Math.max(2,Math.min(passo-3,26));
   const alt=v=>Math.max(v>0?3:1,(v/max)*(H-PT-PB));
   const semana=['dom','seg','ter','qua','qui','sex','sáb'];
+  const rotulaValor = n<=10;
   const barras=dd.map((d,i)=>{
     const h=alt(d.v), x=i*passo+(passo-larg)/2, y=H-PB-h;
     const cor = i===n-1 ? 'var(--rosa-esc)' : (d.v? 'var(--rosa)' : 'var(--line)');
-    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${larg.toFixed(1)}" height="${h.toFixed(1)}"
+    let s=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${larg.toFixed(1)}" height="${h.toFixed(1)}"
       rx="${Math.min(3,larg/2).toFixed(1)}" fill="${cor}"><title>${new Date(d.t).toLocaleDateString('pt-BR')} · ${brl(d.v)}</title></rect>`;
+    if(rotulaValor&&d.v>0){
+      s+=`<text x="${(i*passo+passo/2).toFixed(1)}" y="${(y-5).toFixed(1)}" text-anchor="middle"
+        font-size="9" font-weight="700" fill="${i===n-1?'var(--rosa-esc)':'var(--muted)'}">${curto(d.v)}</text>`;
+    }
+    return s;
   }).join('');
   const passoRot = n<=7?1:Math.ceil(n/6);
   const rotulos=dd.map((d,i)=>{
     if(i%passoRot && i!==n-1) return '';
     const D=new Date(d.t);
-    const txt = n<=7 ? semana[D.getDay()]
-      : D.getDate()+'/'+(D.getMonth()+1);
-    return `<text x="${(i*passo+passo/2).toFixed(1)}" y="${H-6}" text-anchor="middle"
-      font-size="9" fill="${i===n-1?'var(--rosa-esc)':'var(--muted)'}"
-      font-weight="${i===n-1?'700':'500'}">${txt}</text>`;
+    const txt = n<=7 ? semana[D.getDay()] : D.getDate()+'/'+(D.getMonth()+1);
+    return `<text x="${(i*passo+passo/2).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="9"
+      fill="${i===n-1?'var(--rosa-esc)':'var(--muted)'}" font-weight="${i===n-1?'700':'500'}">${txt}</text>`;
   }).join('');
   const comVenda=dd.filter(d=>d.v>0);
-  const media=comVenda.length?dd.reduce((a,d)=>a+d.v,0)/dd.length:0;
+  const media=dd.reduce((a,d)=>a+d.v,0)/dd.length;
   const melhor=dd.reduce((a,d)=>d.v>a.v?d:a,dd[0]);
+  const lista=comVenda.slice().reverse().slice(0,14).map(d=>{
+    const D=new Date(d.t);
+    const rot = D.getTime()===hoje.getTime() ? 'hoje'
+      : D.getTime()===hoje.getTime()-864e5 ? 'ontem'
+      : semana[D.getDay()]+' '+D.getDate()+'/'+(D.getMonth()+1);
+    return `<div class="dia"><span>${rot}</span><b>${brl(d.v)}</b></div>`;
+  }).join('');
   return `<div class="box"><h3>Vendas por dia</h3>
     <svg viewBox="0 0 ${W} ${H}" width="100%" height="auto" preserveAspectRatio="none"
       style="display:block;overflow:visible" role="img" aria-label="Vendas por dia">
       <line x1="0" y1="${H-PB}" x2="${W}" y2="${H-PB}" stroke="var(--line)" stroke-width="1"/>
       ${barras}${rotulos}
     </svg>
-    <div class="stat" style="margin-top:12px"><span>Melhor dia<small>${new Date(melhor.t).toLocaleDateString('pt-BR')}</small></span><b class="folha">${brl(melhor.v)}</b></div>
+    <div class="dias">${lista}</div>
+    <div class="stat" style="margin-top:6px"><span>Melhor dia<small>${new Date(melhor.t).toLocaleDateString('pt-BR')}</small></span><b class="folha">${brl(melhor.v)}</b></div>
     <div class="stat"><span>Média por dia<small>${comVenda.length} de ${n} dias com venda</small></span><b>${brl(media)}</b></div>
   </div>`;
 }
