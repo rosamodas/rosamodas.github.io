@@ -120,6 +120,8 @@ input{font-family:inherit;font-size:16px;color:inherit}
 .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 13px;font-size:13px;font-weight:500}
 .chip[aria-pressed="true"]{background:var(--rosa);border-color:var(--rosa);color:#fff}
 .chip.mais{border-style:dashed;border-color:var(--rosa);color:var(--rosa);font-weight:600}
+.alerta{display:block;width:calc(100% - 32px);margin:12px 16px 0;background:#FBEEDC;color:#8A5511;
+  border:1px solid #F0D9B0;border-radius:11px;padding:11px 14px;font-size:13px;font-weight:600;text-align:left}
 .paleta{display:grid;grid-template-columns:repeat(9,1fr);gap:8px}
 .pal{aspect-ratio:1;border-radius:50%;border:1px solid rgba(0,0,0,.16)}
 .pal[aria-pressed="true"]{box-shadow:0 0 0 3px var(--rosa)}
@@ -419,6 +421,14 @@ const enriquecer=m=>Object.assign({},m,dadosAtuais(m));
 const totaisHoje=()=>S.movimentos.filter(m=>m.tipo==='venda'&&m.data>=desde(1)).reduce((a,m)=>a+m.total,0);
 
 /* ============ topo ============ */
+function avisoBackup(){
+  if(!S.produtos.length)return '';
+  const d=diasDesde(BK.ultimo);
+  if(BK.repo && d!==null && d<=7)return '';
+  const txt = !BK.repo ? 'Backup online não configurado'
+    : d===null ? 'Nenhum backup foi feito ainda' : 'Último backup há '+d+' dias';
+  return `<button class="alerta" onclick="abrirSeguranca()">⚠ ${txt} · tocar para proteger</button>`;
+}
 function renderTop(){
   const T={
     vender:['Vender','Vendido hoje',brl(totaisHoje())],
@@ -441,7 +451,7 @@ function setAba(k){aba=k;busca='';render()}
 function render(){
   renderTop();renderNav();
   $('fab').style.display=aba==='relatorios'?'none':'flex';
-  $('view').innerHTML={vender:telaVender,estoque:telaEstoque,relatorios:telaRelatorios}[aba]();
+  $('view').innerHTML=avisoBackup()+{vender:telaVender,estoque:telaEstoque,relatorios:telaRelatorios}[aba]();
 }
 
 /* ============ telas ============ */
@@ -520,6 +530,7 @@ function telaRelatorios(){
     <div class="stat"><span>Saiu<small>compra de peças no período</small></span><b class="mimosa">− ${brl(invest)}</b></div>
     <div class="stat"><span>Lucro das vendas<small>${margem}% de margem</small></span><b class="rosa">${brl(lucro)}</b></div>
   </div>`;
+  h+=graficoDias(vendas,periodo);
   h+=barras('Peças que mais saem',agrupa(vendas,m=>m.nome+' · '+m.tam),false);
   h+=barras('Cores que mais saem',agrupa(vendas,m=>m.cor),true);
   h+=barras('Categorias',agrupa(vendas.filter(m=>m.cat),m=>m.cat),false);
@@ -532,6 +543,49 @@ function telaRelatorios(){
     </div>`).join(''):`<p style="margin:0;font-size:13px;color:var(--muted)">Nenhuma movimentação nesse período.</p>`)+`</div>`;
   h+=`<button class="btn ghost" onclick="abrirAjustes()">Ajustes e backup</button></div>`;
   return h;
+}
+function graficoDias(vendas,dias){
+  const n = dias<0 ? 30 : (dias<=1 ? 7 : Math.min(dias,60));
+  const hoje=new Date(); hoje.setHours(0,0,0,0);
+  const dd=[];
+  for(let i=n-1;i>=0;i--){
+    const ini=hoje.getTime()-i*864e5;
+    dd.push({t:ini, v:vendas.filter(m=>m.data>=ini&&m.data<ini+864e5).reduce((a,m)=>a+m.total,0)});
+  }
+  const max=Math.max(...dd.map(d=>d.v));
+  if(!max) return '';
+  const W=320,H=132,PB=20,PT=8;
+  const passo=W/n, larg=Math.max(2,Math.min(passo-3,26));
+  const alt=v=>Math.max(v>0?3:1,(v/max)*(H-PT-PB));
+  const semana=['dom','seg','ter','qua','qui','sex','sáb'];
+  const barras=dd.map((d,i)=>{
+    const h=alt(d.v), x=i*passo+(passo-larg)/2, y=H-PB-h;
+    const cor = i===n-1 ? 'var(--rosa-esc)' : (d.v? 'var(--rosa)' : 'var(--line)');
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${larg.toFixed(1)}" height="${h.toFixed(1)}"
+      rx="${Math.min(3,larg/2).toFixed(1)}" fill="${cor}"><title>${new Date(d.t).toLocaleDateString('pt-BR')} · ${brl(d.v)}</title></rect>`;
+  }).join('');
+  const passoRot = n<=7?1:Math.ceil(n/6);
+  const rotulos=dd.map((d,i)=>{
+    if(i%passoRot && i!==n-1) return '';
+    const D=new Date(d.t);
+    const txt = n<=7 ? semana[D.getDay()]
+      : D.getDate()+'/'+(D.getMonth()+1);
+    return `<text x="${(i*passo+passo/2).toFixed(1)}" y="${H-6}" text-anchor="middle"
+      font-size="9" fill="${i===n-1?'var(--rosa-esc)':'var(--muted)'}"
+      font-weight="${i===n-1?'700':'500'}">${txt}</text>`;
+  }).join('');
+  const comVenda=dd.filter(d=>d.v>0);
+  const media=comVenda.length?dd.reduce((a,d)=>a+d.v,0)/dd.length:0;
+  const melhor=dd.reduce((a,d)=>d.v>a.v?d:a,dd[0]);
+  return `<div class="box"><h3>Vendas por dia</h3>
+    <svg viewBox="0 0 ${W} ${H}" width="100%" height="auto" preserveAspectRatio="none"
+      style="display:block;overflow:visible" role="img" aria-label="Vendas por dia">
+      <line x1="0" y1="${H-PB}" x2="${W}" y2="${H-PB}" stroke="var(--line)" stroke-width="1"/>
+      ${barras}${rotulos}
+    </svg>
+    <div class="stat" style="margin-top:12px"><span>Melhor dia<small>${new Date(melhor.t).toLocaleDateString('pt-BR')}</small></span><b class="folha">${brl(melhor.v)}</b></div>
+    <div class="stat"><span>Média por dia<small>${comVenda.length} de ${n} dias com venda</small></span><b>${brl(media)}</b></div>
+  </div>`;
 }
 function agrupa(ms,fn){
   const m={};
@@ -727,7 +781,7 @@ async function salvarPeca(outra){
     Object.assign(p,{nome:ficha.nome.trim(),cor:ficha.cor||'Sem cor',tam:ficha.tam||'Único',
       cat:ficha.cat,custo,preco,qtd,capa,atualizado:Date.now()});
     if(dif>0)S.movimentos.push(mov('entrada',p,dif,custo,custo));
-    await gravarFotos(p.id,fotosSheet);await salvar();fecharSheet();render();
+    await gravarFotos(p.id,fotosSheet);await salvar();marcarVitrine();fecharSheet();render();
     return toast('Peça atualizada.');
   }
   const p={id:uid('p'),nome:ficha.nome.trim(),cor:ficha.cor||'Sem cor',tam:ficha.tam||'Único',
@@ -778,14 +832,14 @@ async function confirmarVenda(){
   if(!qtd)return toast('Sem estoque dessa peça.');
   p.qtd-=qtd;p.atualizado=Date.now();
   const m=mov('venda',p,qtd,preco,p.custo);
-  S.movimentos.push(m);await salvar();fecharSheet();render();
+  S.movimentos.push(m);await salvar();marcarVitrine();fecharSheet();render();
   toast('Venda de '+brl(preco*qtd)+' registrada.',()=>desfazer(m.id));
 }
 async function desfazer(mid){
   const i=S.movimentos.findIndex(m=>m.id===mid);if(i<0)return;
   const m=S.movimentos[i],p=S.produtos.find(x=>x.id===m.pid);
   if(p)p.qtd+=m.tipo==='venda'?m.qtd:-m.qtd;
-  S.movimentos.splice(i,1);await salvar();render();toast('Desfeito.');
+  S.movimentos.splice(i,1);await salvar();marcarVitrine();render();toast('Desfeito.');
 }
 
 /* ============ ficha ============ */
@@ -815,7 +869,7 @@ async function carregarStrip(id){
   el.innerHTML=fs.map((f,i)=>`<img src="${f}" onclick="verFotos(${i})" alt="">`).join('');
 }
 const LOJA={nome:'Rosa Modas',tag:'Ousadia & Beleza',
-  publico:'Masculino · Feminino · Infantil & Variedades',insta:'instagram.com/rosamodas59',
+  publico:'Feminino · Infantil & Variedades',insta:'instagram.com/rosamodas59',
   endereco:'Rua Enette Dubard, 480 - Tatuquara, Curitiba'};
 
 function mensagem(p){
@@ -871,14 +925,14 @@ async function confirmarReposicao(){
   const c=num(campo('r-custo', ficha.custo));
   p.qtd+=q;p.custo=c||p.custo;p.atualizado=Date.now();
   const m=mov('entrada',p,q,c,c);
-  S.movimentos.push(m);await salvar();fecharSheet();render();
+  S.movimentos.push(m);await salvar();marcarVitrine();fecharSheet();render();
   toast('+'+q+' no estoque.',()=>desfazer(m.id));
 }
 async function excluir(id){
   const p=S.produtos.find(x=>x.id===id);
   if(!confirm(`Excluir "${p.nome}"? O histórico de vendas continua nos relatórios.`))return;
   S.produtos=S.produtos.filter(x=>x.id!==id);
-  await gravarFotos(id,[]);await salvar();fecharSheet();render();toast('Peça excluída.');
+  await gravarFotos(id,[]);await salvar();marcarVitrine();fecharSheet();render();toast('Peça excluída.');
 }
 
 /* ============ ajustes ============ */
@@ -892,16 +946,136 @@ function abrirAjustes(){
       <div class="stat"><span>Onde fica salvo<small>${onde}</small></span><b></b></div></div>
     <button class="btn" onclick="abrirVitrine()">Publicar vitrine do site</button>
     <button class="btn ghost" onclick="abrirPublicacao()">Chave de publicação</button>
-    <button class="btn ghost" onclick="exportar()">Baixar backup (com fotos)</button>
-    <button class="btn ghost" onclick="pedirRestauro()">Restaurar backup</button>
-    <p class="hint" style="text-align:center;margin:10px 0 16px">Use o backup para levar o estoque
-      para outro celular ou para um endereço novo do site.</p>
+    <button class="btn ghost" onclick="abrirSeguranca()">Segurança dos dados e backup</button>
+    <p class="hint" style="text-align:center;margin:10px 0 16px">Backup online, restauração e proteção
+      contra o navegador apagar os dados.</p>
     <button class="btn danger" onclick="apagarTudo()">Apagar todos os dados</button>
     ${guirlanda()}`);
 }
 const ZAP='5541997180152';
 const REPO='rosamodas/rosamodas.github.io', ARQ='catalogo.json', PUBKEY='loja:publicacao';
 let PUB={token:''};
+const BKKEY='loja:backup';
+let BK={repo:'',ultimo:0};
+const VITKEY='loja:vitrine';
+let VIT={auto:true,publicados:[],pendente:false,ultimo:0};
+let timerVit=null;
+async function carregarVit(){ try{const v=await store.get(VITKEY); if(v)VIT=Object.assign(VIT,JSON.parse(v)||{})}catch(e){} }
+async function salvarVit(){ try{await store.set(VITKEY,JSON.stringify(VIT))}catch(e){} }
+async function carregarBk(){ try{const v=await store.get(BKKEY); if(v)BK=Object.assign(BK,JSON.parse(v)||{})}catch(e){} }
+async function salvarBk(){ try{await store.set(BKKEY,JSON.stringify(BK))}catch(e){} }
+
+/* pede ao navegador para nao descartar os dados quando faltar espaco */
+let PERSISTIDO=false;
+async function garantirPersistencia(){
+  try{
+    if(navigator.storage&&navigator.storage.persist){
+      PERSISTIDO = await navigator.storage.persisted();
+      if(!PERSISTIDO) PERSISTIDO = await navigator.storage.persist();
+    }
+  }catch(e){}
+}
+const diasDesde=t=>t?Math.floor((Date.now()-t)/864e5):null;
+
+async function montarBackup(){
+  const fotos={};
+  for(const p of S.produtos){
+    try{const f=await lerFotos(p.id); if(f.length)fotos[p.id]=f}catch(e){}
+  }
+  return JSON.stringify({versao:2,gerado:Date.now(),dados:S,fotos});
+}
+async function enviarParaRepo(repo,caminho,txt,msg){
+  const url='https://api.github.com/repos/'+repo+'/contents/'+caminho;
+  const h={Authorization:'Bearer '+PUB.token,Accept:'application/vnd.github+json'};
+  let sha=null;
+  try{ const r=await fetch(url+'?ref=main',{headers:h}); if(r.ok) sha=(await r.json()).sha; }catch(e){}
+  const r=await fetch(url,{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},h),
+    body:JSON.stringify({message:msg,branch:'main',content:b64(txt),sha:sha||undefined})});
+  if(!r.ok) throw new Error(erroGit(r.status));
+}
+/* só quantidade e preço: alguns KB, barato de mandar depois de cada venda */
+async function publicarEstoque(manual){
+  if(!PUB.token||!VIT.publicados.length){ if(manual)toast('Publique a vitrine completa primeiro.'); return; }
+  const itens={};
+  S.produtos.filter(naVitrine).forEach(p=>{itens[p.id]={qtd:p.qtd,preco:p.preco}});
+  try{
+    await enviarParaRepo(REPO,'estoque.json',
+      JSON.stringify({gerado:Date.now(),itens}),'Estoque atualizado pelo app');
+    VIT.pendente=false; VIT.ultimo=Date.now(); await salvarVit();
+    if(manual)toast('Site atualizado.');
+    return true;
+  }catch(e){ if(manual)toast(e.message); return false; }
+}
+/* sem fotos: é o que o painel precisa e cabe em poucos KB */
+async function enviarResumo(){
+  if(!PUB.token||!BK.repo)return false;
+  const produtos=S.produtos.map(p=>({id:p.id,nome:p.nome,cor:p.cor,tam:p.tam,cat:p.cat,
+    custo:p.custo,preco:p.preco,qtd:p.qtd}));
+  const corte=Date.now()-90*864e5;
+  const movimentos=S.movimentos.filter(m=>m.data>=corte).slice(-800)
+    .map(m=>({tipo:m.tipo,pid:m.pid,nome:m.nome,cor:m.cor,tam:m.tam,cat:m.cat,
+      qtd:m.qtd,preco:m.preco,custo:m.custo,total:m.total,data:m.data}));
+  try{
+    await enviarParaRepo(BK.repo,'resumo.json',
+      JSON.stringify({gerado:Date.now(),produtos,movimentos}),'Resumo atualizado pelo app');
+    return true;
+  }catch(e){ return false; }
+}
+async function fazerSync(manual){
+  let ok=false;
+  if(VIT.auto&&VIT.publicados.length) ok = await publicarEstoque(manual) || ok;
+  if(BK.repo) ok = await enviarResumo() || ok;
+  VIT.pendente=false; VIT.ultimo=Date.now(); await salvarVit();
+  return ok;
+}
+/* junta as mudanças de uma tarde movimentada em poucos envios */
+function marcarVitrine(){
+  if(!PUB.token)return;
+  if(!VIT.publicados.length && !BK.repo)return;
+  VIT.pendente=true; salvarVit();
+  clearTimeout(timerVit);
+  timerVit=setTimeout(()=>fazerSync(false),90000);
+}
+async function backupOnline(manual){
+  if(!BK.repo||!PUB.token){ if(manual)toast('Configure o backup automático primeiro.'); return; }
+  if(manual)toast('Enviando backup…');
+  try{
+    const txt=await montarBackup();
+    await enviarParaRepo(BK.repo,'backup.json',txt,'Backup automático · '+new Date().toLocaleString('pt-BR'));
+    BK.ultimo=Date.now(); await salvarBk();
+    await enviarResumo();
+    if(manual)toast('Backup guardado fora do celular.');
+    return true;
+  }catch(e){ if(manual)toast(e.message); return false; }
+}
+function abrirSeguranca(){
+  const d=diasDesde(BK.ultimo);
+  const quando = BK.ultimo? (d===0?'hoje':d===1?'ontem':'há '+d+' dias') : 'nunca';
+  abrirSheet(cab('Segurança dos dados','O estoque fica neste celular. Estas são as redes de proteção.')+`
+    <div class="box">
+      <div class="stat" style="padding-top:0"><span>Armazenamento protegido
+        <small>${PERSISTIDO?'o navegador não vai apagar sozinho':'o navegador pode apagar se faltar espaço'}</small></span>
+        <b class="${PERSISTIDO?'folha':'mimosa'}">${PERSISTIDO?'sim':'não'}</b></div>
+      <div class="stat"><span>Último backup online<small>${BK.repo||'ainda não configurado'}</small></span>
+        <b class="${d===null||d>7?'mimosa':'folha'}">${quando}</b></div>
+    </div>
+    <div class="field"><span class="tag-label">Repositório privado do backup</span>
+      <input class="inp" id="bk-repo" placeholder="rosamodas/backup" value="${esc(BK.repo)}" autocomplete="off" spellcheck="false">
+      <p class="hint">Precisa ser privado: o backup tem preço de custo e histórico de vendas.</p></div>
+    <button class="btn" onclick="salvarRepoBackup()">Salvar</button>
+    <button class="btn ghost" onclick="backupOnline(true)">Fazer backup agora</button>
+    <button class="btn ghost" onclick="exportar()">Baixar backup no celular</button>
+    <button class="btn ghost" onclick="pedirRestauro()">Restaurar backup</button>`);
+}
+async function salvarRepoBackup(){
+  const v=(($('bk-repo')||{}).value||'').trim().replace(/^https?:\/\/github.com\//,'');
+  if(v&&!/^[\w.-]+\/[\w.-]+$/.test(v))return toast('Escreva no formato dono/repositorio.');
+  BK.repo=v; await salvarBk();
+  if(!v){fecharSheet();return toast('Backup automático desligado.')}
+  toast('Testando…');
+  const ok=await backupOnline(true);
+  if(ok)fecharSheet();
+}
 async function carregarPub(){ try{const v=await store.get(PUBKEY); if(v)PUB=JSON.parse(v)||{token:''}}catch(e){} }
 async function salvarPub(){ try{await store.set(PUBKEY,JSON.stringify(PUB))}catch(e){} }
 function b64(txt){
@@ -963,11 +1137,26 @@ function abrirVitrine(){
   abrirSheet(cab('Vitrine do site','Escolha o que aparece pra quem entra no site. O resto fica só no seu estoque.')+`
     <div class="box"><div class="stat" style="padding-top:0">
       <span>Peças na vitrine<small>de ${l.length} cadastradas</small></span><b class="rosa" id="v-conta">${n}</b></div></div>
+    ${novasNaVitrine()?`<button class="alerta" onclick="gerarCatalogo()">⚠ ${novasNaVitrine()}
+      peça(s) marcada(s) ainda não estão no site · tocar para publicar tudo</button>`:''}
+    ${VIT.publicados.length?`<button class="row" onclick="alternarAuto()" style="margin-bottom:14px">
+      <div class="row-mid"><b>Atualizar o site sozinho</b>
+        <span>${VIT.auto?'a cada venda, sem você fazer nada':'desligado — publique manualmente'}</span></div>
+      <div class="row-end"><span class="pill" style="${VIT.auto?'background:var(--rosa);color:#fff':''}">${VIT.auto?'ligado':'desligado'}</span></div>
+    </button>`:''}
     <div id="v-lista">${l.map(p=>itemVitrine(p)).join('')}</div>
     <button class="btn" onclick="gerarCatalogo()">${PUB.token?'Publicar no site agora':'Gerar arquivo do site'}</button>
     <p class="hint" style="text-align:center">${PUB.token
       ? 'O site atualiza sozinho, cerca de 1 minuto depois.'
       : 'Sem a chave de publicação, o app baixa o arquivo para enviar ao Rafael.'}</p>`);
+}
+function novasNaVitrine(){
+  if(!VIT.publicados.length)return 0;
+  return S.produtos.filter(p=>naVitrine(p)&&VIT.publicados.indexOf(p.id)<0).length;
+}
+async function alternarAuto(){
+  VIT.auto=!VIT.auto; await salvarVit(); abrirVitrine();
+  toast(VIT.auto?'O site passa a se atualizar sozinho.':'Atualização automática desligada.');
 }
 function itemVitrine(p){
   const on=naVitrine(p);
@@ -983,6 +1172,7 @@ async function toggleVitrine(id){
   const p=S.produtos.find(x=>x.id===id); if(!p)return;
   p.vitrine=!naVitrine(p); p.atualizado=Date.now();
   await salvar();
+  marcarVitrine();
   const el=$('vi-'+id); if(el)el.outerHTML=itemVitrine(p);
   const c=$('v-conta'); if(c)c.textContent=S.produtos.filter(naVitrine).length;
 }
@@ -1009,6 +1199,9 @@ async function gerarCatalogo(){
     toast('Publicando '+tam+'…');
     try{
       await publicarNoGitHub(txt);
+      VIT.publicados=itens.map(i=>i.id); VIT.pendente=false; VIT.ultimo=Date.now();
+      await salvarVit();
+      await publicarEstoque(false);
       fecharSheet();
       toast(itens.length+' peças no ar. O site atualiza em cerca de 1 minuto.');
       return;
@@ -1094,7 +1287,15 @@ function toast(msg,undo){
 }
 
 (async()=>{
-  await carregar();await carregarPub();render();
+  await carregar();await carregarPub();await carregarBk();await carregarVit();
+  await garantirPersistencia();
+  render();
+  /* backup automatico ao abrir, no maximo uma vez por dia, sem travar a tela */
+  if(BK.repo&&PUB.token&&S.produtos.length&&Date.now()-BK.ultimo>20*36e5){
+    backupOnline(false).then(ok=>{ if(ok)render(); });
+  }
+  /* ficou venda pendente de quando o app foi fechado */
+  if(VIT.pendente&&PUB.token&&(VIT.publicados.length||BK.repo)) fazerSync(false);
   if(MODO==='memoria')toast('Este navegador não deixa salvar. Os dados somem ao fechar.');
 })();
 </script>

@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <title>Rosa Modas · Ousadia &amp; Beleza</title>
-<meta name="description" content="Rosa Modas · Ousadia &amp; Beleza. Masculino, feminino, infantil e variedades. Rua Enette Dubard, 480 - Tatuquara, Curitiba. Veja as peças e peça pelo WhatsApp.">
+<meta name="description" content="Rosa Modas · Ousadia &amp; Beleza. Feminino, infantil e variedades. Rua Enette Dubard, 480 - Tatuquara, Curitiba. Veja as peças e peça pelo WhatsApp.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap');
 :root{
@@ -186,12 +186,26 @@ let CAT=null, itens=[], fCat='', fTam='', busca='', atual=null;
 async function iniciar(){
   $('hero').innerHTML=`${guirlanda()}<h1><span class="rs">ROSA</span><span class="md">MODAS</span></h1>
     <p class="lema">Ousadia &amp; Beleza</p>
-    <p>Masculino · Feminino · Infantil &amp; Variedades</p>`;
+    <p>Feminino · Infantil &amp; Variedades</p>`;
   try{
-    const r=await fetch('catalogo.json?v='+Date.now());
-    if(!r.ok) throw new Error('http '+r.status);
-    CAT=await r.json();
+    const v='?v='+Date.now();
+    const [rc,re]=await Promise.all([
+      fetch('catalogo.json'+v),
+      fetch('estoque.json'+v).catch(()=>null)
+    ]);
+    if(!rc.ok) throw new Error('http '+rc.status);
+    CAT=await rc.json();
     itens=(CAT.itens||[]);
+    /* quantidade e preço vêm do arquivo leve, atualizado a cada venda */
+    if(re&&re.ok){
+      try{
+        const est=await re.json();
+        const m=est.itens||{};
+        itens.forEach(i=>{ const e=m[i.id]; if(e){ if(typeof e.qtd==='number')i.qtd=e.qtd;
+          if(typeof e.preco==='number')i.preco=e.preco; } });
+        
+      }catch(e){}
+    }
   }catch(e){
     $('conteudo').className='aviso';
     $('conteudo').innerHTML=`<b>A vitrine ainda não foi publicada</b>
@@ -293,7 +307,7 @@ function montarRodape(){
   const zap=(CAT&&CAT.zap)||'5541997180152';
   $('rodape').innerHTML=`${guirlanda()}
     <b><span style="color:var(--ink)">ROSA</span> <span style="color:var(--rosa)">MODAS</span></b>
-    <p>Ousadia &amp; Beleza · Masculino · Feminino · Infantil &amp; Variedades</p>
+    <p>Ousadia &amp; Beleza · Feminino · Infantil &amp; Variedades</p>
     <div class="local">
       <span class="lbl">Onde estamos</span>
       <p class="end">${ENDERECO.linha1}<br>${ENDERECO.linha2}</p>
