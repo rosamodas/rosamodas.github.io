@@ -989,9 +989,23 @@ async function enviarParaRepo(repo,caminho,txt,msg){
   const h={Authorization:'Bearer '+PUB.token,Accept:'application/vnd.github+json'};
   let sha=null;
   try{ const r=await fetch(url+'?ref=main',{headers:h}); if(r.ok) sha=(await r.json()).sha; }catch(e){}
-  const r=await fetch(url,{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},h),
-    body:JSON.stringify({message:msg,branch:'main',content:b64(txt),sha:sha||undefined})});
-  if(!r.ok) throw new Error(erroGit(r.status));
+
+  async function tentar(comBranch){
+    const corpo={message:msg,content:b64(txt)};
+    if(comBranch)corpo.branch='main';
+    if(sha)corpo.sha=sha;
+    return fetch(url,{method:'PUT',
+      headers:Object.assign({'Content-Type':'application/json'},h),
+      body:JSON.stringify(corpo)});
+  }
+  let r=await tentar(true);
+  /* repositório recém-criado não tem branch ainda: tenta deixar o GitHub escolher */
+  if(!r.ok && (r.status===404||r.status===409||r.status===422)) r=await tentar(false);
+  if(!r.ok){
+    let det='';
+    try{ const j=await r.json(); det=j.message||''; }catch(e){}
+    throw new Error(erroGit(r.status)+(det?' ['+r.status+': '+det.slice(0,90)+']':' ['+r.status+']'));
+  }
 }
 /* só quantidade e preço: alguns KB, barato de mandar depois de cada venda */
 async function publicarEstoque(manual){
